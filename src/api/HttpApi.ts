@@ -2,10 +2,12 @@ import express, { Express, RequestHandler } from "express";
 import { pathToFileURL } from "url";
 import ApiModule from "./ApiModule";
 import AuthModule from "./modules/AuthModule";
+import cors from "cors";
+import cookieParser from "cookie-parser";
 
 export default class HttpApi {
 
-    basePath: string = "/api/v1/"
+    basePath: string = ""
     port: number = 8100;
     app: Express
 
@@ -19,6 +21,15 @@ export default class HttpApi {
     }
 
     public registerRoutes() {
+        this.app.use((req, res, next) => {
+            if(req.headers.origin) {
+                res.setHeader("access-control-allow-origin", req.headers.origin);
+            }
+            res.setHeader("access-control-allow-credentials", "true");
+            next();
+        });
+        this.app.use(cookieParser());
+
         for(const module of this.modules) {
             const methods = {
                 get: (path: string, cb: RequestHandler) => { this.app.get(this.basePath + module.basePath + path, cb) },
@@ -34,6 +45,13 @@ export default class HttpApi {
 
             module.registerRoutes(methods);
         }
+
+        this.app.use((req, res, next) => {
+            res.status(404).json({
+                type: "error",
+                message: "requested resource not found."
+            });
+        });
     }
         
 
@@ -42,7 +60,7 @@ export default class HttpApi {
             this.app.listen(this.port, resolve);
         });
         
-        console.log("Listening on Port " + this.port);
+        console.log("API listening on Port " + this.port);
     }
 
 }

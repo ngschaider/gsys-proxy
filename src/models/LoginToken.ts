@@ -8,7 +8,9 @@ export default class LoginToken extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
-    @OneToMany(type => User, user => user.loginTokens)
+    @ManyToOne(type => User, user => user.loginTokens, {
+        eager: true,
+    })
     user!: User;
 
     @Column()

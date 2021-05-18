@@ -1,49 +1,82 @@
-import express, {Express, request, Request, response, Response} from "express";
-import proxy from "express-http-proxy";
+import express, {Express, Request, response, Response} from "express";
 import fs from "fs";
 import https from "https";
-import {JSDOM} from "jsdom";
-import User from "./models/User";
-import { createProxyMiddleware, responseInterceptor } from "http-proxy-middleware";
-import { rootCertificates } from "tls";
-import keepAlive from "agentkeepalive";
-import createFormFill from "./utils/formfill";
+import http from "http";
 import Service, { ServiceType } from "./models/Service";
-import registerPveService from "./proxy/createPveProxyMiddleware";
-import createPveProxyMiddleware from "./proxy/createPveProxyMiddleware";
+import cookieParser from "cookie-parser";
+import createTransparentProxy from "./middlewares/createTransparentProxy";
+import createPveProxy from "./middlewares/createPveProxy";
+import path from "path";
+import authenticationMiddleware from "./middlewares/authenticationMiddleware";
+import createServiceProxy from "./middlewares/createServiceProxy";
+import bodyParser from "body-parser";
+import expressWs from "express-ws";
 
 export default class HttpProxy {
 
-    port: number = 8101;
+    port: number = 443;
     app: Express;
+    httpsServer: https.Server
 
     constructor() {
         this.app = express();
-    }
 
-    async registerRoutes() {
-        const services = await Service.find();
-
-        for(const service of services) {
-            if(service.type === ServiceType.PVE) {
-                this.app.use(createPveProxyMiddleware(service));
-            }
-        }
-
-        this.app.use((req, res, next) => {
-            res.sendFile(__dirname + "/public/proxy/notFound.html");
-        });
-    }
-
-    async listen() {
         const credentials = {
             key: fs.readFileSync("certificates/proxy.key"),
             cert: fs.readFileSync("certificates/proxy.crt"),
         }
+        this.httpsServer = https.createServer(credentials, this.app);
 
-        const httpsServer = https.createServer(credentials, this.app);
+        expressWs(this.app, this.httpsServer);
+    }
+
+    async registerRoutes() {
+        this.app.use((req, res, next) => {
+            console.log(req.url);
+            next();
+        })
+        // parse all cookies (required for authenticationMiddleware)
+        this.app.use(cookieParser());
+
+        /*this.app.use(express.urlencoded({
+            extended: false,
+        }));*/
+
+        // set req.service, if authentication cookie is valid set and req.user
+        // if it exists also set req.serviceUser
+        this.app.use(authenticationMiddleware);
+
+        // this displays a message if no service is found
+        this.app.use((req, res, next) => {
+            if(req.service) {
+                next();
+            } else {
+                res.sendFile(path.resolve("static/notFound.html"));
+            }
+        });
+
+        // register proxies for protected Services
+        const services = await Service.find();
+        for(const service of services) {
+            const serviceProxy = createServiceProxy(service);
+            this.app.use(serviceProxy);
+        }
+        this.app.on("upgrade", () => {
+            console.log("upgrade");
+        });
+
+        // if nothing is proxied yet, redirect to login
+        this.app.use((req, res, next) => {
+            if(!req.user) {
+                const origin = encodeURIComponent(req.protocol + "://" + req.headers.host + req.originalUrl)
+                res.redirect(307, "https://accounts.gsys.at/login?origin=" + origin);
+            }
+        });
+    }
+
+    async listen() {
         await new Promise<void>(resolve => {
-            httpsServer.listen(this.port, resolve);
+            this.httpsServer.listen(this.port, resolve);
         });
 
         console.log("Proxy listening on Port " + this.port);

@@ -12,7 +12,7 @@ export default class ServiceUser extends BaseEntity {
     user!: User;
 
     @ManyToOne(type => Service, service => service.serviceUsers)
-    service!: Service;
+    service!: Promise<Service>;
 
     @Column()
     username: string = "";
@@ -20,7 +20,11 @@ export default class ServiceUser extends BaseEntity {
     @Column()
     password: string = "";
 
-    @Column()
-    additionalInfo: string = "";
+    @Column({type: "text"})
+    token!: string;
+
+    @Column({type: "timestamp"})
+    tokenCreated!: Date;
+    
 
 }

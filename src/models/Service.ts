@@ -4,6 +4,7 @@ import ServiceUser from "./ServiceUser";
 export enum ServiceType {
     PVE = "pve",
     PhpMyAdmin = "phpmyadmin",
+    Transparent = "transparent",
 }
 
 export type ServiceProtocol = "http" | "https";

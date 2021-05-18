@@ -26,7 +26,9 @@ export default class User extends BaseEntity {
     @OneToMany(type => LoginToken, loginToken => loginToken.user)
     loginTokens!: LoginToken[];
 
-    @OneToMany(type => ServiceUser, serviceUser => serviceUser.user)
+    @OneToMany(type => ServiceUser, serviceUser => serviceUser.user, {
+        eager: true,
+    })
     serviceUsers!: ServiceUser[];
 
 }
