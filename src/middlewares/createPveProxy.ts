@@ -6,13 +6,15 @@ import PveApi from "../pve/PveApi";
 import createTransparentProxy from "./createTransparentProxy";
 import querystring from "querystring";
 
+const tokenCache: Record<string,string> = {};
+
 export default (service: Service) => {
     const middleware = createTransparentProxy(service, {
         selfHandleResponse: true,
         onProxyRes: responseInterceptor(async (buffer, proxyRes, req, res) => {
             if(req.url === "/") {
                 // set a bogus cookie so the client thinks it is logged in.
-                res.setHeader("Set-Cookie", "PVEAuthCookie=InterceptedByProxy; Secure");
+                res.setHeader("set-cookie", "PVEAuthCookie=InterceptedByProxy");
             } else if(req.url === "/api2/json/access/ticket") {
                 const data = JSON.parse(buffer.toString());
                 if(data?.data?.ticket) {
@@ -32,14 +34,21 @@ export default (service: Service) => {
                 proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
                 // stream the content
                 proxyReq.write(bodyData);
-            } else if(req.url.includes("vncwebsocket")) {
-                
             }
+            
         },
-        onProxyReqWs: (proxyReq, req, socket, options, head) => {
-            console.log("ws request: ");
-            console.log(req.url);
+        onProxyReqWs: (proxyReq, req, socket, options) => {
+            console.log(req.cookies);
+            const newCookies = {
+                ...req.cookies,
+                //PVEAuthCookie: tokenCache[req.cookies.],
+            }
+            
+            proxyReq.setHeader("cookie", Object.keys(newCookies).map(key => key + "=" + newCookies[key]).join("; ")); 
         },
+        // pathRewrite: (path, req) => {
+        //     return path.replace("/.websocket", "");
+        // },
     });
 
     return async (req: express.Request, res: express.Response, next: NextFunction) => {
@@ -48,7 +57,7 @@ export default (service: Service) => {
             return;
         }
 
-        // if we dont have a token or the saved token is older than 2 hours, request a new token and save it
+        //if we dont have a token or the saved token is older than 2 hours, request a new token and save it
         const d = new Date();
         d.setHours(d.getHours() - 2);
         if(!req.serviceUser.token || req.serviceUser.tokenCreated < d) {
@@ -62,16 +71,17 @@ export default (service: Service) => {
             console.log("Requesting new PVE token");
             req.serviceUser.tokenCreated = new Date();
             req.serviceUser.token = token;
-            req.serviceUser.save();
+            await req.serviceUser.save();
         }
 
-        // set the auth token
+        //set the auth token
         const newCookies = {
             ...req.cookies,
             PVEAuthCookie: req.serviceUser.token,
         }
         req.headers["cookie"] = Object.keys(newCookies).map(key => key + "=" + newCookies[key]).join("; "); 
 
+<<<<<<< HEAD
         /*if(req.url === "/api2/json/access/ticket") {
             req.write(querystring.stringify({
                 username: "root@pam",
@@ -80,6 +90,8 @@ export default (service: Service) => {
         }*/
 
 
+=======
+>>>>>>> 6a10c93... started fixing a nasty websocket bug
         middleware(req, res, next);
     }
 }

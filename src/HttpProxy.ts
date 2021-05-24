@@ -11,14 +11,19 @@ import authenticationMiddleware from "./middlewares/authenticationMiddleware";
 import createServiceProxy from "./middlewares/createServiceProxy";
 import bodyParser from "body-parser";
 import expressWs from "express-ws";
+import { createProxyMiddleware } from "http-proxy-middleware";
+
+export let instance: HttpProxy;
 
 export default class HttpProxy {
 
     port: number = 443;
     app: Express;
     httpsServer: https.Server
-
+    
     constructor() {
+        instance = this;
+        
         this.app = express();
 
         const credentials = {
@@ -26,21 +31,12 @@ export default class HttpProxy {
             cert: fs.readFileSync("certificates/proxy.crt"),
         }
         this.httpsServer = https.createServer(credentials, this.app);
-
-        expressWs(this.app, this.httpsServer);
+        //expressWs(this.app, this.httpsServer);
     }
 
     async registerRoutes() {
-        this.app.use((req, res, next) => {
-            console.log(req.url);
-            next();
-        })
         // parse all cookies (required for authenticationMiddleware)
         this.app.use(cookieParser());
-
-        /*this.app.use(express.urlencoded({
-            extended: false,
-        }));*/
 
         // set req.service, if authentication cookie is valid set and req.user
         // if it exists also set req.serviceUser
@@ -61,17 +57,14 @@ export default class HttpProxy {
             const serviceProxy = createServiceProxy(service);
             this.app.use(serviceProxy);
         }
-        this.app.on("upgrade", () => {
-            console.log("upgrade");
-        });
 
         // if nothing is proxied yet, redirect to login
         this.app.use((req, res, next) => {
-            if(!req.user) {
+            if(!req.user && req.service?.type !== ServiceType.Transparent) {
                 const origin = encodeURIComponent(req.protocol + "://" + req.headers.host + req.originalUrl)
                 res.redirect(307, "https://accounts.gsys.at/login?origin=" + origin);
             }
-        });
+        });        
     }
 
     async listen() {
