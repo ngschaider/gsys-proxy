@@ -31,4 +31,10 @@ export default class User extends BaseEntity {
     })
     serviceUsers!: ServiceUser[];
 
+    @Column()
+    resetPasswordOnLogin!: boolean;
+
+    @Column()
+    isAdmin!: boolean;
+
 }

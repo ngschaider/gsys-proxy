@@ -13,17 +13,13 @@ import bodyParser from "body-parser";
 import expressWs from "express-ws";
 import { createProxyMiddleware } from "http-proxy-middleware";
 
-export let instance: HttpProxy;
-
 export default class HttpProxy {
 
     port: number = 443;
     app: Express;
     httpsServer: https.Server
     
-    constructor() {
-        instance = this;
-        
+    constructor() {        
         this.app = express();
 
         const credentials = {
@@ -31,7 +27,6 @@ export default class HttpProxy {
             cert: fs.readFileSync("certificates/proxy.crt"),
         }
         this.httpsServer = https.createServer(credentials, this.app);
-        //expressWs(this.app, this.httpsServer);
     }
 
     async registerRoutes() {

@@ -4,12 +4,15 @@ import ApiModule from "./ApiModule";
 import AuthModule from "./modules/AuthModule";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import https from "https";
+import fs from "fs";
 
 export default class HttpApi {
 
     basePath: string = ""
     port: number = 8100;
     app: Express
+    httpsServer: https.Server;
 
     modules: ApiModule[];
 
@@ -17,7 +20,13 @@ export default class HttpApi {
         this.app = express();
         this.modules = [
             new AuthModule(),
-        ]
+        ];
+
+        const credentials = {
+            key: fs.readFileSync("certificates/api.key"),
+            cert: fs.readFileSync("certificates/api.crt"),
+        }
+        this.httpsServer = https.createServer(credentials, this.app);
     }
 
     public registerRoutes() {
@@ -57,9 +66,9 @@ export default class HttpApi {
 
     public async listen() {
         await new Promise<void>(resolve => {
-            this.app.listen(this.port, resolve);
+            this.httpsServer.listen(this.port, resolve);
         });
-        
+
         console.log("API listening on Port " + this.port);
     }
 

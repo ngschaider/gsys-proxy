@@ -5,8 +5,10 @@ import Service from "../models/Service";
 import PveApi from "../pve/PveApi";
 import createTransparentProxy from "./createTransparentProxy";
 import querystring from "querystring";
+import cookieParser from "cookie-parser";
+import cookie from "cookie";
 
-const tokenCache: Record<string,string> = {};
+const ticketCache: Record<string,string> = {};
 
 export default (service: Service) => {
     const middleware = createTransparentProxy(service, {
@@ -14,7 +16,7 @@ export default (service: Service) => {
         onProxyRes: responseInterceptor(async (buffer, proxyRes, req, res) => {
             if(req.url === "/") {
                 // set a bogus cookie so the client thinks it is logged in.
-                res.setHeader("set-cookie", "PVEAuthCookie=InterceptedByProxy");
+                res.setHeader("set-cookie", "PVEAuthCookie=InterceptedByProxy; Secure");
             } else if(req.url === "/api2/json/access/ticket") {
                 const data = JSON.parse(buffer.toString());
                 if(data?.data?.ticket) {
@@ -30,25 +32,41 @@ export default (service: Service) => {
                     username: req.serviceUser?.username,
                     password: req.serviceUser?.token,
                 });
-                proxyReq.setHeader('Content-Type','application/x-www-form-urlencoded');
                 proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-                // stream the content
+                proxyReq.write(bodyData);
+            } else if(req.url.includes("spiceproxy")) {
+                const bodyData = querystring.stringify({
+                    proxy: req.service?.targetHost,
+                });
+                proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
                 proxyReq.write(bodyData);
             }
-            
         },
         onProxyReqWs: (proxyReq, req, socket, options) => {
-            console.log(req.cookies);
+            const reqCookiesHeader = req.headers["cookie"];
+            if(!reqCookiesHeader) {
+                console.error("no cookies supplied for websocket interception");
+                return;
+            }
+
+            req.cookies = cookie.parse(reqCookiesHeader);
+            if(!req.cookies.GSYSAuthCookie) {
+                console.error("no auth cookie supplied for websocket interception");
+                return;
+            } 
+
+            const ticket = ticketCache[req.cookies.GSYSAuthCookie];
+            if(!ticket) {
+                console.error("no ticket in ticketCache for supplied gsys auth cookie")
+            }
+
             const newCookies = {
                 ...req.cookies,
-                //PVEAuthCookie: tokenCache[req.cookies.],
+                PVEAuthCookie: ticket,
             }
             
             proxyReq.setHeader("cookie", Object.keys(newCookies).map(key => key + "=" + newCookies[key]).join("; ")); 
         },
-        // pathRewrite: (path, req) => {
-        //     return path.replace("/.websocket", "");
-        // },
     });
 
     return async (req: express.Request, res: express.Response, next: NextFunction) => {
@@ -72,6 +90,10 @@ export default (service: Service) => {
             req.serviceUser.tokenCreated = new Date();
             req.serviceUser.token = token;
             await req.serviceUser.save();
+        }
+
+        if(req.loginToken) {
+            ticketCache[req.loginToken.token] = req.serviceUser.token;
         }
 
         //set the auth token

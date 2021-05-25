@@ -5,6 +5,32 @@ import bcrypt from "bcryptjs";
 import LoginToken from "../../models/LoginToken";
 import {validate as validateEmail} from "email-validator";
 
+enum ResponseType {
+    Error = "error",
+    Success = "success",
+}
+
+enum ResponseMessage {
+    INVALID_TOKEN = "Token ungültig!",
+    NOT_ENOUGH_PARAMETERS = "Not enough parameters!",
+    LOGIN_OKAY = "Anmeldung erfolgreich!",
+    REGISTER_OKAY = "Registrierung erfolgreich!",
+    WRONG_CREDENTIALS = "Benutzername oder Passwort falsch!",
+    PASSWORDS_NOT_MATCHING = "Passwörter stimmen nicht überein!",
+    WRONG_EMAIL_FORMAT = "E-Mail Adresse scheint nicht richtig zu sein!",
+    USERNAME_TAKEN = "Benutzername bereits vergeben!",
+    EMAIL_TAKEN = "Benutzer mit dieser E-Mail Adresse bereits vorhanden!",
+    LOGOUT_OKAY = "Abmeldung erfolgreich!",
+}
+
+enum ResponseCode {
+    LOGIN_OKAY = "CHANGE_PASSWORD",
+    CHANGE_PASSWORD = "CHANGE_PASSWORD",
+    REGISTER_OKAY = "REGISTER_OKAY",
+    INVALID_TOKEN = "INVALID_TOKEN",
+    LOGOUT_OKAY = "LOGOUT_OKAY",
+}
+
 export default class AuthModule extends ApiModule {
 
     constructor() {
@@ -16,8 +42,8 @@ export default class AuthModule extends ApiModule {
             const {usernameOrEmail, password} = req.query;
             if(!usernameOrEmail || !password) {
                 res.json({
-                    type: "error", 
-                    message: "Nicht genügend Parameter!",
+                    type: ResponseType.Error, 
+                    message: ResponseMessage.NOT_ENOUGH_PARAMETERS,
                 });
                 return;
             };
@@ -34,8 +60,8 @@ export default class AuthModule extends ApiModule {
 
                 if(valid) {
                     res.json({
-                        type: "success",
-                        message: "Anmeldung erfolgreich!",
+                        type: ResponseType.Success,
+                        message: ResponseMessage.LOGIN_OKAY,
                         token: loginToken.token,
                     });
                     return;
@@ -43,8 +69,8 @@ export default class AuthModule extends ApiModule {
             }
 
             res.json({
-                type: "error",
-                message: "Benutzername oder Passwort falsch!",
+                type: ResponseType.Error,
+                message: ResponseMessage.WRONG_CREDENTIALS,
             });
         });
 
@@ -53,24 +79,24 @@ export default class AuthModule extends ApiModule {
 
             if(!firstName || !lastName || !username || !email || !password || !passwordConfirm) {
                 res.json({
-                    type: "error", 
-                    message: "Nicht genügend Parameter!",
+                    type: ResponseType.Error, 
+                    message: ResponseMessage.NOT_ENOUGH_PARAMETERS,
                 });
                 return;
             }
 
             if(password !== passwordConfirm) {
                 res.json({
-                    type: "error", 
-                    message: "Passwörter stimmen nicht überein!",
+                    type: ResponseType.Error, 
+                    message: ResponseMessage.PASSWORDS_NOT_MATCHING,
                 });
                 return;
             }
 
             if(!validateEmail(email.toString())) {
                 res.json({
-                    type: "error", 
-                    message: "E-Mail Adresse scheint nicht richtig zu sein!",
+                    type: ResponseType.Error, 
+                    message: ResponseMessage.WRONG_EMAIL_FORMAT,
                 });
                 return;
             }
@@ -78,16 +104,16 @@ export default class AuthModule extends ApiModule {
             const alreadyExistingUsername = await User.findOne({username: username.toString()});
             if(alreadyExistingUsername) {
                 res.json({
-                    type: "error", 
-                    message: "Benutzername bereits vergeben!",
+                    type: ResponseType.Error, 
+                    message: ResponseMessage.USERNAME_TAKEN,
                 });
                 return;
             }
             const alreadyExistingEmail = await User.findOne({email: email.toString()});
             if(alreadyExistingEmail) {
                 res.json({
-                    type: "error", 
-                    message: "Benutzer mit dieser E-Mail Adresse bereits vorhanden!",
+                    type: ResponseType.Error, 
+                    message: ResponseMessage.EMAIL_TAKEN,
                 });
                 return;
             }
@@ -109,7 +135,7 @@ export default class AuthModule extends ApiModule {
 
             res.json({
                 type: "success",
-                message: "Registrierung erfolgreich!",
+                message: ResponseMessage.REGISTER_OKAY,
                 token: loginToken.token,
             });
             return;
@@ -140,9 +166,9 @@ export default class AuthModule extends ApiModule {
                 return;
             } else {
                 res.json({
-                    type: "error",
-                    message: "Token ungültig!",
-                    code: "INVALID_TOKEN",
+                    type: ResponseType.Error,
+                    message: ResponseMessage.INVALID_TOKEN,
+                    code: ResponseCode.INVALID_TOKEN,
                 });
                 return;
             }
@@ -153,8 +179,8 @@ export default class AuthModule extends ApiModule {
 
             if(!token) {
                 res.json({
-                    type: "error", 
-                    message: "Nicht genügend Parameter!",
+                    type: ResponseType.Error, 
+                    message: ResponseMessage.NOT_ENOUGH_PARAMETERS,
                 });
                 return;
             }
@@ -162,9 +188,9 @@ export default class AuthModule extends ApiModule {
             const loginToken = await LoginToken.findOne({token});
             if(!loginToken) {
                 res.json({
-                    type: "error",
-                    message: "Token ungültig!",
-                    code: "INVALID_TOKEN",
+                    type: ResponseType.Error,
+                    code: ResponseCode.INVALID_TOKEN,
+                    message: ResponseMessage.INVALID_TOKEN,
                 });
                 return;
             }
@@ -172,8 +198,9 @@ export default class AuthModule extends ApiModule {
             await loginToken.remove();
 
             res.json({
-                type: "success",
-                message: "Abmeldung erfolgreich!",
+                type: ResponseType.Success,
+                code: ResponseCode.LOGOUT_OKAY,
+                message: ResponseMessage.LOGOUT_OKAY,
             });
         });
 
