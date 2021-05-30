@@ -1,11 +1,18 @@
 import express, { Express, RequestHandler } from "express";
 import { pathToFileURL } from "url";
 import ApiModule from "./ApiModule";
-import AuthModule from "./modules/AuthModule";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import https from "https";
 import fs from "fs";
+import LoginToken from "../models/LoginToken";
+import User from "../models/User";
+import { attachControllers } from "@decorators/express";
+import AuthController from "./controllers/AuthController";
+import UserController from "./controllers/UserController";
+import ResponseType from "./ResponseType";
+import ResponseMessage from "./ResponseMessage";
+import ResponseCode from "./ResponseCode";
 
 export default class HttpApi {
 
@@ -14,13 +21,8 @@ export default class HttpApi {
     app: Express
     httpsServer: https.Server;
 
-    modules: ApiModule[];
-
     public constructor() {
         this.app = express();
-        this.modules = [
-            new AuthModule(),
-        ];
 
         const credentials = {
             key: fs.readFileSync("certificates/api.key"),
@@ -35,30 +37,37 @@ export default class HttpApi {
                 res.setHeader("access-control-allow-origin", req.headers.origin);
             }
             res.setHeader("access-control-allow-credentials", "true");
+            res.setHeader("access-control-allow-headers", "content-type");
             next();
         });
-        this.app.use(cookieParser());
 
-        for(const module of this.modules) {
-            const methods = {
-                get: (path: string, cb: RequestHandler) => { this.app.get(this.basePath + module.basePath + path, cb) },
-                head: (path: string, cb: RequestHandler) => { this.app.head(this.basePath + module.basePath + path, cb) },
-                post: (path: string, cb: RequestHandler) => { this.app.post(this.basePath + module.basePath + path, cb) },
-                put: (path: string, cb: RequestHandler) => { this.app.put(this.basePath + module.basePath + path, cb) },
-                delete: (path: string, cb: RequestHandler) => { this.app.delete(this.basePath + module.basePath + path, cb) },
-                connect: (path: string, cb: RequestHandler) => { this.app.connect(this.basePath + module.basePath + path, cb) },
-                options: (path: string, cb: RequestHandler) => { this.app.options(this.basePath + module.basePath + path, cb) },
-                trace: (path: string, cb: RequestHandler) => { this.app.trace(this.basePath + module.basePath + path, cb) },
-                patch: (path: string, cb: RequestHandler) => { this.app.patch(this.basePath + module.basePath + path, cb) },
+        this.app.use(cookieParser());
+        this.app.use(express.urlencoded({
+            extended: false,
+        }));
+        this.app.use(express.json());
+
+        this.app.use(async (req, res, next) => {
+            const token = req.cookies["GSYSAuthCookie"];
+            if(token) {
+                const loginToken = await LoginToken.findOne({token});
+                req.loginToken = loginToken;
+                if(loginToken) {
+                    req.user = loginToken.user;
+                }
             }
 
-            module.registerRoutes(methods);
-        }
+            next();
+        });
+
+        attachControllers(this.app, [AuthController, UserController]);
+
 
         this.app.use((req, res, next) => {
-            res.status(404).json({
-                type: "error",
-                message: "requested resource not found."
+            res.json({
+                type: ResponseType.Error,
+                message: ResponseMessage.RESOURCE_NOT_FOUND,
+                code: ResponseCode.RESOURCE_NOT_FOUND,
             });
         });
     }

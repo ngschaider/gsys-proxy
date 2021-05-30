@@ -78,10 +78,7 @@ export default class AuthModule extends ApiModule {
             const {firstName, lastName, username, email, password, passwordConfirm} = req.query;
 
             if(!firstName || !lastName || !username || !email || !password || !passwordConfirm) {
-                res.json({
-                    type: ResponseType.Error, 
-                    message: ResponseMessage.NOT_ENOUGH_PARAMETERS,
-                });
+                this.notEnoughParameters(res);
                 return;
             }
 
@@ -134,7 +131,7 @@ export default class AuthModule extends ApiModule {
             await loginToken.save();
 
             res.json({
-                type: "success",
+                type: ResponseType.Success,
                 message: ResponseMessage.REGISTER_OKAY,
                 token: loginToken.token,
             });
@@ -144,10 +141,7 @@ export default class AuthModule extends ApiModule {
         app.get("/me", async (req, res) => {
             const token = req.cookies["GSYSAuthCookie"];
             if(!token) {
-                res.json({
-                    type: "error", 
-                    message: "Nicht genügend Parameter!",
-                });
+                this.notEnoughParameters(res);
                 return;
             }
 
@@ -155,7 +149,7 @@ export default class AuthModule extends ApiModule {
             if(loginToken && loginToken.user) {
                 const {firstName, lastName, email, username} = loginToken.user;
                 res.json({
-                    type: "success",
+                    type: ResponseType.Success,
                     user: {
                         firstName,
                         lastName,
@@ -165,11 +159,7 @@ export default class AuthModule extends ApiModule {
                 });
                 return;
             } else {
-                res.json({
-                    type: ResponseType.Error,
-                    message: ResponseMessage.INVALID_TOKEN,
-                    code: ResponseCode.INVALID_TOKEN,
-                });
+                this.invalidToken(res);
                 return;
             }
         });
@@ -178,20 +168,13 @@ export default class AuthModule extends ApiModule {
             const token = req.cookies["GSYSAuthCookie"];
 
             if(!token) {
-                res.json({
-                    type: ResponseType.Error, 
-                    message: ResponseMessage.NOT_ENOUGH_PARAMETERS,
-                });
+                this.notEnoughParameters(res);
                 return;
             }
 
             const loginToken = await LoginToken.findOne({token});
             if(!loginToken) {
-                res.json({
-                    type: ResponseType.Error,
-                    code: ResponseCode.INVALID_TOKEN,
-                    message: ResponseMessage.INVALID_TOKEN,
-                });
+                this.invalidToken(res);
                 return;
             }
 

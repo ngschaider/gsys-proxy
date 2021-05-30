@@ -9,6 +9,7 @@ export default class LoginToken extends BaseEntity {
     id!: string;
 
     @ManyToOne(type => User, user => user.loginTokens, {
+        onDelete: "CASCADE",
         eager: true,
     })
     user!: User;

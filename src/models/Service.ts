@@ -19,6 +19,7 @@ export default class Service extends BaseEntity {
     type!: ServiceType;
 
     @OneToMany(type => ServiceUser, serviceUser => serviceUser.service, {
+        onDelete: "NO ACTION",
         eager: true,
     })
     serviceUsers!: ServiceUser[];

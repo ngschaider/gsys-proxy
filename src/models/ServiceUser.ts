@@ -8,10 +8,14 @@ export default class ServiceUser extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
-    @ManyToOne(type => User, user => user.serviceUsers)
+    @ManyToOne(type => User, user => user.serviceUsers, {
+        onDelete: "CASCADE",
+    })
     user!: User;
 
-    @ManyToOne(type => Service, service => service.serviceUsers)
+    @ManyToOne(type => Service, service => service.serviceUsers, {
+        onDelete: "CASCADE",
+    })
     service!: Promise<Service>;
 
     @Column()

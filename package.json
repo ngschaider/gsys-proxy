@@ -10,6 +10,7 @@
   "author": "Niklas Gschaider <niklas.gschaider@gschaider-systems.at>",
   "license": "ISC",
   "devDependencies": {
+    "@decorators/express": "^2.5.0",
     "@types/bcryptjs": "^2.4.2",
     "@types/cookie": "^0.4.0",
     "@types/cookie-parser": "^1.4.2",
