@@ -39,27 +39,43 @@ export default class HttpProxy {
 
         // this displays a message if no service is found
         this.app.use((req, res, next) => {
-            if(req.service) {
-                next();
-            } else {
+            if(!req.service) {
+                console.log("not found");
                 res.sendFile(path.resolve("static/notFound.html"));
+                return;
             }
+
+            next();
         });
 
-        // register proxies for protected Services
+        // if we aren't logged in and we have a proxy which needs authentication redirect to login
+        this.app.use((req, res, next) => {
+            if(!req.user && req.service?.type !== ServiceType.Transparent) {
+                console.log("needs login");
+                const origin = encodeURIComponent(req.protocol + "://" + req.headers.host + req.originalUrl)
+                res.redirect(307, "https://accounts.gsys.at/login?origin=" + origin);
+                return;
+            }
+
+            next();
+        });
+
+        this.app.use((req, res, next) => {
+            if(!req.serviceUser && req.service?.type !== ServiceType.Transparent) {
+                console.log("forbidden");
+                res.sendFile(path.resolve("static/forbidden.html"));
+                return;
+            }
+
+            next();
+        })
+
+        // register proxies for Services
         const services = await Service.find();
         for(const service of services) {
             const serviceProxy = createServiceProxy(service);
             this.app.use(serviceProxy);
         }
-
-        // if nothing is proxied yet, redirect to login
-        this.app.use((req, res, next) => {
-            if(!req.user && req.service?.type !== ServiceType.Transparent) {
-                const origin = encodeURIComponent(req.protocol + "://" + req.headers.host + req.originalUrl)
-                res.redirect(307, "https://accounts.gsys.at/login?origin=" + origin);
-            }
-        });        
     }
 
     async listen() {

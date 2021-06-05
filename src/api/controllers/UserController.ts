@@ -14,6 +14,36 @@ import { AdvancedConsoleLogger } from "typeorm";
 @Controller("/user")
 class UserController extends BaseController {
 
+    @Get("/dashboard")
+    async getDashboardData(@Response() res: express.Response, @Request() req: express.Request) {
+        if(!req.user) {
+            this.invalidToken(res);
+            return;
+        }
+
+
+        res.json({
+            type: ResponseType.Success,
+            data: JSON.parse(req.user.dashboardData),
+        });
+    }
+
+    @Post("/dashboard")
+    async setDashboardData(@Request() req: express.Request, @Response() res: express.Response) {
+        if(!req.user) {
+            this.invalidToken(res);
+            return;
+        }
+
+        req.user.dashboardData = JSON.stringify(req.body);
+        await req.user.save();
+
+        res.json({
+            type: ResponseType.Success,
+        });
+    }
+
+
     @Get("/me")
     async me(@Response() res: express.Response, @Request() req: express.Request){
         if(!req.user) {
@@ -109,7 +139,6 @@ class UserController extends BaseController {
         const {firstName, lastName, username, email, password, isAdmin, changePasswordOnLogin} = req.body;
 
         if(!firstName || !lastName || !username || !email || !password || typeof isAdmin !== "boolean" || typeof changePasswordOnLogin !== "boolean") {
-            console.log(req.body);
             this.notEnoughParameters(res);
             return;
         }
@@ -162,6 +191,9 @@ class UserController extends BaseController {
             token: loginToken.token,
         });
     }
+    
+
+    
 
 }
 

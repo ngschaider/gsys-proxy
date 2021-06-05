@@ -11,7 +11,6 @@ export default async (req: Request, res: Response, next: NextFunction) => {
             where: {token}
         });
         if(loginToken) {
-            console.log(loginToken.user);
             req.user = loginToken.user;
         }
     }
