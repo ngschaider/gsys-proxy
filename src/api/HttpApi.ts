@@ -13,6 +13,7 @@ import UserController from "./controllers/UserController";
 import ResponseType from "./ResponseType";
 import ResponseMessage from "./ResponseMessage";
 import ResponseCode from "./ResponseCode";
+import SpiceController from "./controllers/SpiceController";
 
 export default class HttpApi {
 
@@ -60,7 +61,7 @@ export default class HttpApi {
             next();
         });
 
-        attachControllers(this.app, [AuthController, UserController]);
+        attachControllers(this.app, [AuthController, UserController, SpiceController]);
 
 
         this.app.use((req, res, next) => {

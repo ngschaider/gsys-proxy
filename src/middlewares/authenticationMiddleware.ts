@@ -4,7 +4,7 @@ import Service from "../models/Service";
 import path from "path";
 
 const authenticationMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-    const token = req.cookies["GSYSAuthCookie"] as string|undefined;
+    const token = req.cookies.GSYSAuthCookie;
 
     req.service = await Service.findOne({
         hostname: req.hostname,

@@ -1,7 +1,6 @@
 import express, {Express, Request, response, Response} from "express";
 import fs from "fs";
 import https from "https";
-import http from "http";
 import Service, { ServiceType } from "./models/Service";
 import cookieParser from "cookie-parser";
 import createTransparentProxy from "./middlewares/createTransparentProxy";
@@ -12,6 +11,7 @@ import createServiceProxy from "./middlewares/createServiceProxy";
 import bodyParser from "body-parser";
 import expressWs from "express-ws";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import { Agent } from "http";
 
 export default class HttpProxy {
 
@@ -51,7 +51,6 @@ export default class HttpProxy {
         // if we aren't logged in and we have a proxy which needs authentication redirect to login
         this.app.use((req, res, next) => {
             if(!req.user && req.service?.type !== ServiceType.Transparent) {
-                console.log("needs login");
                 const origin = encodeURIComponent(req.protocol + "://" + req.headers.host + req.originalUrl)
                 res.redirect(307, "https://accounts.gsys.at/login?origin=" + origin);
                 return;
@@ -71,10 +70,15 @@ export default class HttpProxy {
         })
 
         // register proxies for Services
-        const services = await Service.find();
+        /*const services = await Service.find();
         for(const service of services) {
             const serviceProxy = createServiceProxy(service);
             this.app.use(serviceProxy);
+        }*/
+
+
+        for(const service of await Service.find()) {
+            this.app.use(createTransparentProxy(service));
         }
     }
 

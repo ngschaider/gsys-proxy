@@ -3,7 +3,7 @@ import LoginToken from "../models/LoginToken";
 import User from "../models/User";
 
 export default async (req: Request, res: Response, next: NextFunction) => {
-    const token = req.cookies["GSYSAuthCookie"] as string|undefined;
+    const token = req.cookies.GSYSAuthCookie;
 
     if(token) {
         const loginToken = await LoginToken.findOne({

@@ -31,8 +31,9 @@ class AuthController extends BaseController {
         if(user) {
             const valid = await bcrypt.compare(password.toString(), user.passwordHash);
 
-            const loginToken = LoginToken.create();
-            loginToken.user = user;
+            const loginToken = LoginToken.create({
+                user: user,
+            });
             await loginToken.save();
 
             if(valid) {

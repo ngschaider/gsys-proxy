@@ -139,7 +139,7 @@ export default class AuthModule extends ApiModule {
         });
 
         app.get("/me", async (req, res) => {
-            const token = req.cookies["GSYSAuthCookie"];
+            const token = req.cookiesGSYSAuthCookie;
             if(!token) {
                 this.notEnoughParameters(res);
                 return;
@@ -165,7 +165,7 @@ export default class AuthModule extends ApiModule {
         });
 
         app.get("/logout", async (req, res) => {
-            const token = req.cookies["GSYSAuthCookie"];
+            const token = req.cookies.GSYSAuthCookie;
 
             if(!token) {
                 this.notEnoughParameters(res);
