@@ -37,7 +37,6 @@ class PveApi {
         }
 
         const data = JSON.parse(res.body);
-        console.log(data);
 
         if(data.data) {
             return  {

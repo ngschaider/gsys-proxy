@@ -1,4 +1,5 @@
-import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm";
+import { stringify } from "querystring";
+import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import ServiceUser from "./ServiceUser";
 
 export enum ServiceType {
@@ -12,8 +13,8 @@ export type ServiceProtocol = "http" | "https";
 @Entity()
 export default class Service extends BaseEntity {
 
-    @PrimaryColumn()
-    name!: string;
+    @PrimaryGeneratedColumn("uuid")
+    id!: string;
 
     @Column()
     type!: ServiceType;
@@ -35,5 +36,16 @@ export default class Service extends BaseEntity {
     
     @Column()
     protocol!: ServiceProtocol;
+
+    withoutHiddenFields() {
+        return {
+            hostname: this.hostname,
+            targetHost: this.targetHost,
+            targetPort: this.targetPort,
+            protocol: this.protocol,
+            type: this.type,
+            id: this.id,
+        }
+    }
 
 }

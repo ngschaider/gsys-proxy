@@ -1,5 +1,4 @@
 import { Controller, Get, Params, Post, Request, Response } from "@decorators/express";
-import { request } from "express";
 import express from "express";
 import User from "../../models/User";
 import ResponseType from "../ResponseType";
@@ -9,7 +8,6 @@ import ResponseMessage from "../ResponseMessage";
 import { validate as validateEmail } from "email-validator";
 import ResponseCode from "../ResponseCode";
 import bcrypt from "bcryptjs";
-import { AdvancedConsoleLogger } from "typeorm";
 
 @Controller("/user")
 class UserController extends BaseController {
@@ -111,15 +109,18 @@ class UserController extends BaseController {
         }
 
         const user = await User.findOne({id});
-        if(user) {
-            user.email = req.body.email;
-            user.username = req.body.username;
-            user.firstName = req.body.firstName;
-            user.lastName = req.body.lastName;
-            user.isAdmin = req.body.isAdmin;
-            user.changePasswordOnLogin = req.body.changePasswordOnLogin;
+        if(!user) {
+            this.userNotFound(res);
+            return;
         }
-        await user?.save();
+
+        user.email = req.body.email || user.email;
+        user.username = req.body.username || user.username;
+        user.firstName = req.body.firstName || user.firstName;
+        user.lastName = req.body.lastName || user.lastName;
+        user.isAdmin = req.body.isAdmin || user.isAdmin;
+        user.changePasswordOnLogin = req.body.changePasswordOnLogin || user.changePasswordOnLogin;
+        await user.save();
 
         res.json({
             type: ResponseType.Success,
@@ -133,8 +134,6 @@ class UserController extends BaseController {
             this.notEnoughPermissions(res);
             return;
         }
-
-        console.timeLog(req.body);
 
         const {firstName, lastName, username, email, password, isAdmin, changePasswordOnLogin} = req.body;
 

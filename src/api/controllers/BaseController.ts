@@ -29,6 +29,27 @@ class BaseController {
         });
     }
 
+    userNotFound(res: Response) {
+        res.json({
+            type: ResponseType.Error,
+            code: ResponseCode.USER_NOT_FOUND,
+        });
+    }
+
+    serviceUserNotFound(res: Response) {
+        res.json({
+            type: ResponseType.Error,
+            code: ResponseCode.SERVICE_USER_NOT_FOUND,
+        });
+    }
+
+    serviceNotFound(res: Response) {
+        res.json({
+            type: ResponseType.Error,
+            code: ResponseCode.SERVICE_NOT_FOUND,
+        });
+    }
+
 }
 
 export default BaseController;

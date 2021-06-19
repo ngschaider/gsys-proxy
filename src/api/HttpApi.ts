@@ -1,12 +1,8 @@
-import express, { Express, RequestHandler } from "express";
-import { pathToFileURL } from "url";
-import ApiModule from "./ApiModule";
-import cors from "cors";
+import express, { Express } from "express";
 import cookieParser from "cookie-parser";
 import https from "https";
 import fs from "fs";
 import LoginToken from "../models/LoginToken";
-import User from "../models/User";
 import { attachControllers } from "@decorators/express";
 import AuthController from "./controllers/AuthController";
 import UserController from "./controllers/UserController";
@@ -14,6 +10,8 @@ import ResponseType from "./ResponseType";
 import ResponseMessage from "./ResponseMessage";
 import ResponseCode from "./ResponseCode";
 import SpiceController from "./controllers/SpiceController";
+import ServiceUserController from "./controllers/ServiceUserController";
+import ServiceController from "./controllers/ServiceController";
 
 export default class HttpApi {
 
@@ -61,7 +59,13 @@ export default class HttpApi {
             next();
         });
 
-        attachControllers(this.app, [AuthController, UserController, SpiceController]);
+        attachControllers(this.app, [
+            AuthController,
+            UserController,
+            SpiceController,
+            ServiceUserController,
+            ServiceController,
+        ]);
 
 
         this.app.use((req, res, next) => {

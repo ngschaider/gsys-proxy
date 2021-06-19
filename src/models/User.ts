@@ -52,7 +52,7 @@ export default class User extends BaseEntity {
         }
     }
 
-    @Column({type: "text"})
+    @Column({type: "text", default: null})
     dashboardData!: string;
 
 }

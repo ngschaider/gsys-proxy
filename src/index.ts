@@ -1,11 +1,12 @@
 import express from "express";
 import { createConnection } from "typeorm";
 import HttpApi from "./api/HttpApi";
-import HttpProxy from "./HttpProxy";
+import HttpProxy from "./proxy/HttpProxy";
 import https from "https";
 import fs from "fs";
 import PveApi from "./pve/PveApi";
 import { bootstrap } from "global-agent";
+import Service from "./models/Service";
 
 const main = async () => {
     process.env.GLOBAL_AGENT_HTTP_PROXY="http://192.168.0.233:8080";
@@ -19,7 +20,7 @@ const main = async () => {
     await httpApi.listen();
 
     const httpProxy = new HttpProxy();
-    httpProxy.registerRoutes();
+    httpProxy.registerServices(await Service.find());
     await httpProxy.listen();
 };
 main();

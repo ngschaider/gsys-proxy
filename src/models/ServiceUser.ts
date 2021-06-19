@@ -3,6 +3,8 @@ import PveApi from "../pve/PveApi";
 import Service, { ServiceType } from "./Service";
 import User from "./User";
 
+
+
 @Entity()
 export default class ServiceUser extends BaseEntity {
 
@@ -12,7 +14,7 @@ export default class ServiceUser extends BaseEntity {
     @ManyToOne(type => User, user => user.serviceUsers, {
         onDelete: "CASCADE",
     })
-    user!: User;
+    user!: Promise<User>;
 
     @ManyToOne(type => Service, service => service.serviceUsers, {
         onDelete: "CASCADE",
@@ -26,7 +28,7 @@ export default class ServiceUser extends BaseEntity {
     password: string = "";
 
     @Column({type: "text", name: "data"})
-    private _data!: string;
+    private _data: string = "";
 
     get data(): any {
         if(!this._data) return {};
@@ -43,7 +45,7 @@ export default class ServiceUser extends BaseEntity {
     async preRequest() {
         const service = await this.service;
         if(!service) {
-            console.log("No Service found ServiceUser (constraint failing?)")
+            console.log("No Service found for ServiceUser '" + this.id + "'");
             return;
         }
 
@@ -66,6 +68,17 @@ export default class ServiceUser extends BaseEntity {
                 }
                 this.save(); // this is async but we dont wait for saving
             }
+        }
+    }
+
+    async withoutHiddenFields() {
+        return {
+            id: this.id,
+            username: this.username,
+            password: this.password,
+            data: this.data,
+            service: (await this.service).withoutHiddenFields(),
+            user: (await this.user).withoutHiddenFields(),
         }
     }
 
