@@ -1,9 +1,33 @@
-import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, SaveOptions } from "typeorm";
 import PveApi from "../pve/PveApi";
 import Service, { ServiceType } from "./Service";
 import User from "./User";
 
+interface ServiceUserDataPVE extends ServiceUserDataGeneric {
+    type: ServiceType.PVE,
+    username: string,
+    realm: string,
+    password: string,
+    tokenCreated: string,
+    token: string,
+    csrf: string,
+}
 
+interface ServiceUserDataPhpMyAdmin extends ServiceUserDataGeneric {
+    type: ServiceType.PhpMyAdmin,
+    username: string,
+    password: string,
+}
+
+interface ServiceUserDataGeneric {
+    type: string;
+}
+
+interface ServiceUserDataTransparent extends ServiceUserDataGeneric {
+    type: ServiceType.Transparent
+}
+
+type ServiceUserData = ServiceUserDataPVE | ServiceUserDataPhpMyAdmin | ServiceUserDataTransparent;
 
 @Entity()
 export default class ServiceUser extends BaseEntity {
@@ -21,22 +45,25 @@ export default class ServiceUser extends BaseEntity {
     })
     service!: Promise<Service>;
 
-    @Column()
-    username: string = "";
-
-    @Column()
-    password: string = "";
-
     @Column({type: "text", name: "data"})
     private _data: string = "";
 
-    get data(): any {
-        if(!this._data) return {};
-        return JSON.parse(this._data);
+    private cachedData?: ServiceUserData;
+    get data() {
+        if(!this.cachedData) {
+            this.cachedData = JSON.parse(this._data) as ServiceUserData;
+        }
+        return this.cachedData;
     }
 
-    set data(value: any) {
-        this._data = JSON.stringify(value);
+    set data(value) {
+        this.cachedData = value;
+    }
+
+
+    async save(options?: SaveOptions) {
+        this._data = JSON.stringify(this.data);
+        return super.save();
     }
 
     @Column({type: "timestamp"})
@@ -49,23 +76,21 @@ export default class ServiceUser extends BaseEntity {
             return;
         }
 
-        if(service.type === ServiceType.PVE) {
+        if(service.type === ServiceType.PVE && this.data.type === ServiceType.PVE) {
             //if we dont have a token or the saved token is older than 2 hours, request a new token and save it
             //console.log("Checking Ticket validity");
             const d = new Date();
             d.setHours(d.getHours() - 2);
-            if(!this.data.token || this.tokenCreated < d) {
+            if(!this.data || this.tokenCreated < d) {
                 const host = service.protocol + "://" + service.targetHost + ":" + service.targetPort;
                 console.log("Requesting new PVE Ticket...");
-                const tokenResp = await PveApi.getNewTicket(host, this.username, this.password);
+                const tokenResp = await PveApi.getNewTicket(host, this.data.username, this.data.password);
                 if(!tokenResp) {
                     return;
                 }
                 this.tokenCreated = new Date();
-                this.data = {
-                    token: tokenResp.token,
-                    csrf: tokenResp.csrf,
-                }
+                this.data.token = tokenResp.token;
+                this.data.csrf = tokenResp.csrf;
                 this.save(); // this is async but we dont wait for saving
             }
         }
@@ -74,8 +99,6 @@ export default class ServiceUser extends BaseEntity {
     async withoutHiddenFields() {
         return {
             id: this.id,
-            username: this.username,
-            password: this.password,
             data: this.data,
             service: (await this.service).withoutHiddenFields(),
             user: (await this.user).withoutHiddenFields(),

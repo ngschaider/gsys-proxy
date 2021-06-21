@@ -9,7 +9,7 @@ import { validate as validateEmail } from "email-validator";
 import ResponseCode from "../ResponseCode";
 import bcrypt from "bcryptjs";
 import ServiceUser from "../../models/ServiceUser";
-import Service from "../../models/Service";
+import Service, { ServiceType } from "../../models/Service";
 
 @Controller("/serviceUser")
 class ServiceUserController extends BaseController {
@@ -94,6 +94,10 @@ class ServiceUserController extends BaseController {
             this.serviceUserNotFound(res);
             return;
         }
+        if(serviceUser.data.type !== ServiceType.PVE) {
+            console.log("Wrong ServiceUser data type");
+            return;
+        }
 
         if(req.body.serviceId) {
             const service = await Service.findOne({id: req.body.serviceId});
@@ -104,8 +108,8 @@ class ServiceUserController extends BaseController {
             serviceUser.service = Promise.resolve(service);
         }
 
-        serviceUser.username = req.body.username || serviceUser.username;
-        serviceUser.password = req.body.password || serviceUser.password;
+        serviceUser.data.username = req.body.username || serviceUser.data.username;
+        serviceUser.data.password = req.body.password || serviceUser.data.password;
 
         await serviceUser.save();
 
@@ -132,8 +136,10 @@ class ServiceUserController extends BaseController {
         const passwordHash = await bcrypt.hash(password, 12);
 
         const serviceUser: ServiceUser = ServiceUser.create({
-            username,
-            password,
+            data: {
+                username,
+                password,
+            }
         });
 
         const service = await Service.findOne({id: serviceId});

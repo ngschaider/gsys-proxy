@@ -1,5 +1,5 @@
 import { IncomingMessage, ClientRequest, ServerResponse } from "http";
-import Service from "../../models/Service";
+import Service, { ServiceType } from "../../models/Service";
 import ProtectedProxy from "./ProtectedProxy";
 import querystring from "querystring";
 import { ServerOptions } from "http-proxy";
@@ -14,15 +14,25 @@ class PveProxy extends ProtectedProxy {
     }
 
     async onProxyReq(proxyReq: ClientRequest, req: IncomingMessage, res: ServerResponse) {
-        await req.serviceUser?.preRequest();
+        if(!req.serviceUser) {
+            console.log("no service user found onProxyReq PVE");
+            return;
+        }
+        if(req.serviceUser.data.type !== ServiceType.PVE) {
+            console.log("Wrong ServiceUser Data Type");
+            return;
+        }
+
+        await req.serviceUser.preRequest();
+
         proxyReq.setHeader("cookie", "PVEAuthCookie=" + req.serviceUser?.data.token);
 
         if(req.url === "/api2/json/access/ticket") {
             // intercept the credentials when requesting a new ticket
             // (the pve client requests a new token when the current token is nearly expired)
             const bodyData = querystring.stringify({
-                username: req.serviceUser?.username,
-                password: req.serviceUser?.data.token,
+                username: req.serviceUser.data.username,
+                password: req.serviceUser.data.token,
             });
             proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
             proxyReq.write(bodyData);
@@ -38,53 +48,26 @@ class PveProxy extends ProtectedProxy {
     }
 
     async onProxyRes(proxyRes: IncomingMessage, req: IncomingMessage, res: ServerResponse) {
-        // const data: Buffer[] = [];
-        // proxyRes.on("data", data.push);
-
         if(req.url === "/") {
             // set a bogus cookie so the client thinks it is logged in.
             res.setHeader("set-cookie", "PVEAuthCookie=InterceptedByProxy; Secure");
         } 
-        // else if(req.url?.includes("pvemanagerlib")) {
-        //     proxyRes.on("end", () => {
-        //         const newBody = Buffer.concat(data).toString().replace(`
-        //         '-',
-        //         {
-        //             iconCls: 'fa fa-fw fa-sign-out',
-        //             text: gettext("Logout"),
-        //             handler: function() {
-        //             PVE.data.ResourceStore.loadData([], false);
-        //             me.showLogin();
-        //             me.setContent(null);
-        //             var rt = me.down('pveResourceTree');
-        //             rt.setDatacenterText(undefined);
-        //             rt.clearTree();
-    
-        //             // empty the stores of the StatusPanel child items
-        //             var statusPanels = Ext.ComponentQuery.query('pveStatusPanel grid');
-        //             Ext.Array.forEach(statusPanels, function(comp) {
-        //                 if (comp.getStore()) {
-        //                 comp.getStore().loadData([], false);
-        //                 }
-        //             });
-        //             },
-        //         },`, "");
-        //         res.write(Buffer.from(newBody));
-        //         res.end();
-        //     });
-        // }
-
-        // proxyRes.pipe(res);
-        // proxyRes.on("end", () => {
-        //     res.end();
-        // });
     }
 
     async onProxyReqWs(proxyReq: ClientRequest, req: IncomingMessage, socket: Socket, options: ServerOptions, head: Buffer) {
         console.log("PveProxy received WebSocket Upgrade Connection!");
 
-        await req.serviceUser?.preRequest();
-        proxyReq.setHeader("cookie", "PVEAuthCookie=" + req.serviceUser?.data.token);
+        if(!req.serviceUser){
+            console.log("websocket request without serviceUser");
+            return;
+        }
+        if(req.serviceUser.data.type !== ServiceType.PVE) {
+            console.log("Service User Data has wrong type");
+            return;
+        }
+
+        await req.serviceUser.preRequest();
+        proxyReq.setHeader("cookie", "PVEAuthCookie=" + req.serviceUser.data.token);
     }
 
 }

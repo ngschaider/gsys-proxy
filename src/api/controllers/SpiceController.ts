@@ -47,6 +47,10 @@ class SpiceController extends BaseController {
             this.notEnoughPermissions(res);
             return;
         }
+        if(serviceUser.data.type !== ServiceType.PVE) {
+            console.log("Wrong Data Type");
+            return;
+        }
 
         const address = service.protocol + "://" + service.targetHost + ":" + service.targetPort;
 
