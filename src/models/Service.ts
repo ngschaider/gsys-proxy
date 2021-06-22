@@ -6,6 +6,7 @@ export enum ServiceType {
     PVE = "pve",
     PhpMyAdmin = "phpmyadmin",
     Transparent = "transparent",
+    Gitea = "gitea",
 }
 
 export type ServiceProtocol = "http" | "https";

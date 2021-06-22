@@ -19,6 +19,14 @@ interface ServiceUserDataPhpMyAdmin extends ServiceUserDataGeneric {
     password: string,
 }
 
+interface ServiceUserDataGitea extends ServiceUserDataGeneric {
+    type: ServiceType.Gitea,
+    username: string,
+    password: string,
+    token: string,
+    tokenCreated: string,
+}
+
 interface ServiceUserDataGeneric {
     type: string;
 }
@@ -66,9 +74,6 @@ export default class ServiceUser extends BaseEntity {
         return super.save();
     }
 
-    @Column({type: "timestamp"})
-    tokenCreated!: Date;
-
     async preRequest() {
         const service = await this.service;
         if(!service) {
@@ -81,14 +86,14 @@ export default class ServiceUser extends BaseEntity {
             //console.log("Checking Ticket validity");
             const d = new Date();
             d.setHours(d.getHours() - 2);
-            if(!this.data || this.tokenCreated < d) {
+            if(!this.data || new Date(this.data.tokenCreated) < d) {
                 const host = service.protocol + "://" + service.targetHost + ":" + service.targetPort;
                 console.log("Requesting new PVE Ticket...");
                 const tokenResp = await PveApi.getNewTicket(host, this.data.username, this.data.password);
                 if(!tokenResp) {
                     return;
                 }
-                this.tokenCreated = new Date();
+                this.data.tokenCreated = new Date().toString();
                 this.data.token = tokenResp.token;
                 this.data.csrf = tokenResp.csrf;
                 this.save(); // this is async but we dont wait for saving

@@ -1,7 +1,7 @@
 import ProtectedProxy from "./ProtectedProxy";
 import Proxy from "./TransparentProxy";
 
-class PhpMyAdminProxy extends ProtectedProxy {
+class GiteaProxy extends ProtectedProxy {
 
 }
-export default PhpMyAdminProxy;
+export default GiteaProxy;

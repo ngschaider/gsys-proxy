@@ -4,11 +4,12 @@ import Service, { ServiceType } from "../models/Service";
 import { IncomingMessage, ServerResponse } from "http";
 import Proxy from "./proxies/TransparentProxy";
 import TransparentProxy from "./proxies/TransparentProxy";
-import PhpMyAdminProxy from "./proxies/PhpMyAdminProxy";
+import PhpMyAdminProxy from "./proxies/GiteaProxy";
 import PveProxy from "./proxies/PveProxy";
 import cookie from "cookie";
 import LoginToken from "../models/LoginToken";
 import formfill from "../utils/formfill";
+import GiteaProxy from "./proxies/GiteaProxy";
 
 export default class HttpProxy {
 
@@ -67,8 +68,8 @@ export default class HttpProxy {
             this.proxies.push(new TransparentProxy(service));
         } else if(service.type === ServiceType.PVE) {
             this.proxies.push(new PveProxy(service));
-        } else if(service.type === ServiceType.PhpMyAdmin) {
-            this.proxies.push(new PhpMyAdminProxy(service));
+        } else if(service.type === ServiceType.Gitea) {
+            this.proxies.push(new GiteaProxy(service));
         }
     }
     

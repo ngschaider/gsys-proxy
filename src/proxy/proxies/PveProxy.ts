@@ -48,7 +48,10 @@ class PveProxy extends ProtectedProxy {
     }
 
     async onProxyRes(proxyRes: IncomingMessage, req: IncomingMessage, res: ServerResponse) {
+        console.log("onProxyRes");
+        console.log(req.url);
         if(req.url === "/") {
+            console.log("setting bogus cookie");
             // set a bogus cookie so the client thinks it is logged in.
             res.setHeader("set-cookie", "PVEAuthCookie=InterceptedByProxy; Secure");
         } 
