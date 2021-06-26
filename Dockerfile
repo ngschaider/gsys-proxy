@@ -1,16 +1,16 @@
-FROM node:14
+FROM node:15
+RUN npm install -g npm@7.19.0
 WORKDIR /compile
 COPY ./ ./
-RUN ls -la
 RUN npm install
 RUN npm run build
 
-FROM node:14
 WORKDIR /app
 COPY package.json ./
 COPY package-lock.json ./
+RUN mv /compile/dist/* ./
+RUN rm -rf /compile
 RUN npm install --only=production
-COPY --from=0 /compile/dist ./
 RUN npm install pm2 -g
 
 EXPOSE 8100
