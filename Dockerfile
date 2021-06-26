@@ -14,5 +14,5 @@ COPY --from=0 /compile/dist ./
 RUN npm install pm2 -g
 
 EXPOSE 8100
-EXPOSE
+EXPOSE 443
 CMD ["pm2-runtime", "index.js"]
