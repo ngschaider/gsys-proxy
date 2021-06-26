@@ -10,6 +10,8 @@ import cookie from "cookie";
 import LoginToken from "../models/LoginToken";
 import formfill from "../utils/formfill";
 import GiteaProxy from "./proxies/GiteaProxy";
+import ServiceUser from "../models/ServiceUser";
+import OPNsenseProxy from "./proxies/OPNsenseProxy";
 
 export default class HttpProxy {
 
@@ -57,10 +59,25 @@ export default class HttpProxy {
         if(!req.user) return;
 
         req.service = service;
-        req.serviceUser = req.user.serviceUsers.find(async serviceUser => {
-            const service2 = await serviceUser.service;
-            return service2 === service;
+        // console.log("looking for service user for service " + req.service.id);
+        // console.log("got " + req.user.serviceUsers.length + " service users for this user");
+        const serviceUser = await ServiceUser.findOne({
+            where: {
+                service: {
+                    id: req.service.id,
+                }
+            }
         });
+
+        req.serviceUser = serviceUser;
+        // req.serviceUser = req.user.serviceUsers.find(async serviceUser => {
+        //     const service2 = await serviceUser.service;
+
+        //     // const format = service2 === service ? "MATCH" : "not matching";
+        //     // console.log("    - Comparison for ServiceUser " + serviceUser.id + " results in: " + format);
+
+        //     return service2.id === service.id;
+        // });
     }
 
     registerService(service: Service) {
@@ -70,6 +87,8 @@ export default class HttpProxy {
             this.proxies.push(new PveProxy(service));
         } else if(service.type === ServiceType.Gitea) {
             this.proxies.push(new GiteaProxy(service));
+        } else if(service.type === ServiceType.OPNsense) {
+            this.proxies.push(new OPNsenseProxy(service));
         }
     }
     

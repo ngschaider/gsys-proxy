@@ -94,10 +94,6 @@ class ServiceUserController extends BaseController {
             this.serviceUserNotFound(res);
             return;
         }
-        if(serviceUser.data.type !== ServiceType.PVE) {
-            console.log("Wrong ServiceUser data type");
-            return;
-        }
 
         if(req.body.serviceId) {
             const service = await Service.findOne({id: req.body.serviceId});
@@ -108,8 +104,7 @@ class ServiceUserController extends BaseController {
             serviceUser.service = Promise.resolve(service);
         }
 
-        serviceUser.data.username = req.body.username || serviceUser.data.username;
-        serviceUser.data.password = req.body.password || serviceUser.data.password;
+        serviceUser.data = req.body.data || serviceUser.data;
 
         await serviceUser.save();
 

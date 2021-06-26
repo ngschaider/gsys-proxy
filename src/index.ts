@@ -4,7 +4,7 @@ import HttpApi from "./api/HttpApi";
 import HttpProxy from "./proxy/HttpProxy";
 import https from "https";
 import fs from "fs";
-import PveApi from "./pve/PveApi";
+import PveApi from "./external_api/PveApi";
 import { bootstrap } from "global-agent";
 import Service from "./models/Service";
 
@@ -23,4 +23,5 @@ const main = async () => {
     httpProxy.registerServices(await Service.find());
     await httpProxy.listen();
 };
+
 main();

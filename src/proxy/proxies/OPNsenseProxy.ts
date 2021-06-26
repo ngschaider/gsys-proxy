@@ -9,8 +9,9 @@ import cookieParser from "cookie-parser";
 import cookie from "cookie";
 import { replaceCookie } from "../../utils/cookies";
 import { sendFile, ServerPage } from "../../utils/sendfile";
+import OPNsenseApi from "../../external_api/OPNsenseApi";
 
-class GiteaProxy extends ProtectedProxy {
+class OPNsenseProxy extends ProtectedProxy {
 
     constructor(service: Service) {
         super(service, {
@@ -19,32 +20,28 @@ class GiteaProxy extends ProtectedProxy {
     }
 
     async web(req: IncomingMessage, res: ServerResponse) {
-        if(req.url == "/user/logout") {
-            res.setHeader("location", "/");
-            res.end();
+        if(req.url === "/index.php?logout") {
+            sendFile(res, ServerPage.Disabled);
             return;
         }
-
         this.server.web(req, res);
     }
 
     async onProxyReq(proxyReq: ClientRequest, req: IncomingMessage, res: ServerResponse) {
         if(!req.serviceUser) {
-            console.log("no service user found onProxyReq Gitea");
+            console.log("no service user found onProxyReq OPNsense");
             return;
         }
-        if(req.serviceUser.data.type !== ServiceType.Gitea) {
-            console.log("GiteaProxy: Wrong ServiceUser Data Type");
+        if(req.serviceUser.data.type !== ServiceType.OPNsense) {
+            console.log("OPNsenseProxy: Wrong ServiceUser Data Type");
             return;
         }
 
         await req.serviceUser.preRequest();
 
-        const cookieName = GiteaApi.getSessionCookieName();
-
         const originalCookies = req.headers.cookie ?? "";
-        proxyReq.setHeader("cookie", replaceCookie(originalCookies, cookieName, req.serviceUser?.data.token));
+        proxyReq.setHeader("cookie", replaceCookie(originalCookies, "PHPSESSID", req.serviceUser?.data.token));
     }
 
 }
-export default GiteaProxy;
+export default OPNsenseProxy;

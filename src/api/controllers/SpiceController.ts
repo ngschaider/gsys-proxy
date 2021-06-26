@@ -11,7 +11,7 @@ import {validate as validateEmail} from "email-validator";
 import ResponseCode from "../ResponseCode";
 import { ServiceType } from "../../models/Service";
 import { rootCa } from "../../utils/certificates";
-import PveApi from "../../pve/PveApi";
+import PveApi from "../../external_api/PveApi";
 
 @Controller("/spice")
 class SpiceController extends BaseController {

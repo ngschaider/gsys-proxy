@@ -19,7 +19,9 @@ class PveProxy extends ProtectedProxy {
             return;
         }
         if(req.serviceUser.data.type !== ServiceType.PVE) {
-            console.log("Wrong ServiceUser Data Type");
+            console.log("PveProxy: Wrong ServiceUser Data Type");
+            // console.log("ServiceUser ID: " + req.serviceUser.id);
+            // console.log("Service ID: " + req.service?.id);
             return;
         }
 
@@ -31,7 +33,7 @@ class PveProxy extends ProtectedProxy {
             // intercept the credentials when requesting a new ticket
             // (the pve client requests a new token when the current token is nearly expired)
             const bodyData = querystring.stringify({
-                username: req.serviceUser.data.username,
+                username: req.serviceUser.data.username + "@" + req.serviceUser.data.realm,
                 password: req.serviceUser.data.token,
             });
             proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
@@ -48,10 +50,7 @@ class PveProxy extends ProtectedProxy {
     }
 
     async onProxyRes(proxyRes: IncomingMessage, req: IncomingMessage, res: ServerResponse) {
-        console.log("onProxyRes");
-        console.log(req.url);
         if(req.url === "/") {
-            console.log("setting bogus cookie");
             // set a bogus cookie so the client thinks it is logged in.
             res.setHeader("set-cookie", "PVEAuthCookie=InterceptedByProxy; Secure");
         } 

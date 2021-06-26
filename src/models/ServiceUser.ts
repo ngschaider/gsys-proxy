@@ -1,5 +1,7 @@
 import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, SaveOptions } from "typeorm";
-import PveApi from "../pve/PveApi";
+import GiteaApi from "../external_api/GiteaApi";
+import OPNsenseApi from "../external_api/OPNsenseApi";
+import PveApi from "../external_api/PveApi";
 import Service, { ServiceType } from "./Service";
 import User from "./User";
 
@@ -27,6 +29,14 @@ interface ServiceUserDataGitea extends ServiceUserDataGeneric {
     tokenCreated: string,
 }
 
+interface ServiceUserDataOPNsense extends ServiceUserDataGeneric {
+    type: ServiceType.OPNsense,
+    username: string,
+    password: string,
+    token: string,
+    tokenCreated: string,
+}
+
 interface ServiceUserDataGeneric {
     type: string;
 }
@@ -35,7 +45,8 @@ interface ServiceUserDataTransparent extends ServiceUserDataGeneric {
     type: ServiceType.Transparent
 }
 
-type ServiceUserData = ServiceUserDataPVE | ServiceUserDataPhpMyAdmin | ServiceUserDataTransparent;
+
+type ServiceUserData = ServiceUserDataPVE | ServiceUserDataPhpMyAdmin | ServiceUserDataTransparent | ServiceUserDataGitea | ServiceUserDataOPNsense;
 
 @Entity()
 export default class ServiceUser extends BaseEntity {
@@ -53,26 +64,8 @@ export default class ServiceUser extends BaseEntity {
     })
     service!: Promise<Service>;
 
-    @Column({type: "text", name: "data"})
-    private _data: string = "";
-
-    private cachedData?: ServiceUserData;
-    get data() {
-        if(!this.cachedData) {
-            this.cachedData = JSON.parse(this._data) as ServiceUserData;
-        }
-        return this.cachedData;
-    }
-
-    set data(value) {
-        this.cachedData = value;
-    }
-
-
-    async save(options?: SaveOptions) {
-        this._data = JSON.stringify(this.data);
-        return super.save();
-    }
+    @Column({type: "json", name: "data"})
+    data!: ServiceUserData;
 
     async preRequest() {
         const service = await this.service;
@@ -86,19 +79,44 @@ export default class ServiceUser extends BaseEntity {
             //console.log("Checking Ticket validity");
             const d = new Date();
             d.setHours(d.getHours() - 2);
-            if(!this.data || new Date(this.data.tokenCreated) < d) {
+            if(!this.data.token || !this.data.tokenCreated || new Date(this.data.tokenCreated) < d) {
                 const host = service.protocol + "://" + service.targetHost + ":" + service.targetPort;
                 console.log("Requesting new PVE Ticket...");
-                const tokenResp = await PveApi.getNewTicket(host, this.data.username, this.data.password);
+                const tokenResp = await PveApi.getNewTicket(host, this.data.username + "@" + this.data.realm, this.data.password);
                 if(!tokenResp) {
                     return;
                 }
                 this.data.tokenCreated = new Date().toString();
                 this.data.token = tokenResp.token;
                 this.data.csrf = tokenResp.csrf;
-                this.save(); // this is async but we dont wait for saving
+                await this.save(); // this is async but we dont wait for saving
             }
-        }
+        } else if(service.type === ServiceType.Gitea && this.data.type === ServiceType.Gitea) {
+            const d = new Date();
+            d.setDate(d.getDate() - 1);
+
+            if(!this.data.token || !this.data.tokenCreated || new Date(this.data.tokenCreated) < d) {
+                console.log("Requesting new Gitea Session...");
+                const host = service.protocol + "://" + service.targetHost + ":" + service.targetPort;
+                const token = await GiteaApi.getLoggedInSession(host, this.data.username, this.data.password);
+                this.data.token = token;
+                this.data.tokenCreated = new Date().toString();
+                await this.save();
+            }
+        } else if(service.type === ServiceType.OPNsense && this.data.type === ServiceType.OPNsense) {
+            const d = new Date();
+            d.setDate(d.getDate() - 1);
+
+            if(!this.data.token || !this.data.tokenCreated || new Date(this.data.tokenCreated) < d) {
+                console.log("Requesting new OPNsense Session...");
+                const host = service.protocol + "://" + service.targetHost + ":" + service.targetPort;
+                const token = await OPNsenseApi.getLoggedInSession(host, this.data.username, this.data.password);
+                this.data.token = token;
+                this.data.tokenCreated = new Date().toString();
+                await this.save();
+            }
+        } 
+
     }
 
     async withoutHiddenFields() {
