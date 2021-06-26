@@ -20,6 +20,10 @@ class GiteaProxy extends ProtectedProxy {
 
     async web(req: IncomingMessage, res: ServerResponse) {
         if(req.url == "/user/logout") {
+            if(req.serviceUser?.data.type === ServiceType.Gitea) {
+                req.serviceUser.data.token = "";
+                await req.serviceUser.save();
+            }
             res.setHeader("location", "/");
             res.end();
             return;
@@ -38,12 +42,16 @@ class GiteaProxy extends ProtectedProxy {
             return;
         }
 
-        await req.serviceUser.preRequest();
+        if(req.url?.startsWith("/user/login")) {
+            await req.serviceUser.preRequest();
+        }
 
-        const cookieName = GiteaApi.getSessionCookieName();
+        if(req.serviceUser.data.token) {
+            const cookieName = GiteaApi.getSessionCookieName();
 
-        const originalCookies = req.headers.cookie ?? "";
-        proxyReq.setHeader("cookie", replaceCookie(originalCookies, cookieName, req.serviceUser?.data.token));
+            const originalCookies = req.headers.cookie ?? "";
+            proxyReq.setHeader("cookie", replaceCookie(originalCookies, cookieName, req.serviceUser?.data.token));
+        }
     }
 
 }
