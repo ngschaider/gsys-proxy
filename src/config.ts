@@ -11,14 +11,14 @@ export const database: any = {
     "database": process.env.DB_NAME || "gsys-proxy",
     "synchronize": true,
     "entities": [
-        "src/models/**/*.ts"
+        __dirname + "/models/**/*.{ts,js}",
     ],
     "migrations": [
-        "src/migrations/**/*.ts"
+        __dirname + "/migrations/**/*.{ts,js}"
     ],
     "cli": {
-        "entitiesDir": "src/models",
-        "migrationsDir": "src/migrations"
+        "entitiesDir": "./models",
+        "migrationsDir": "./migrations"
     }
 };
 
