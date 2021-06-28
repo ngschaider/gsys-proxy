@@ -10,8 +10,8 @@ import Service from "./models/Service";
 import config from "./config";
 
 const main = async () => {
-    process.env.GLOBAL_AGENT_HTTP_PROXY="http://192.168.0.233:8080";
-    bootstrap();
+    // process.env.GLOBAL_AGENT_HTTP_PROXY="http://192.168.0.233:8080";
+    // bootstrap();
 
     await createConnection(config.database);
     console.log("Connected to Database!");
