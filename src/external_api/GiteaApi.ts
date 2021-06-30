@@ -1,6 +1,6 @@
 import request from "request-promise";
-import {rootCa} from "../utils/certificates";
 import querystring from "querystring";
+import config from "../config";
 
 class GiteaApi {
 
@@ -76,7 +76,7 @@ class GiteaApi {
                 "content-type": "application/x-www-form-urlencoded",
             },
             simple: false,
-            ca: rootCa,
+            ca: config.CA,
             resolveWithFullResponse: true,
         });
         

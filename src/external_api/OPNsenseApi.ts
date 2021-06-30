@@ -1,13 +1,13 @@
 import request from "request-promise";
-import {rootCa} from "../utils/certificates";
 import querystring from "querystring";
+import config from "../config";
 
 class OPNsenseApi {
 
     static async getSessionAndCsrf(host: string) {
         const res = await request(host, {
             simple: false,
-            ca: rootCa,
+            ca: config.CA,
             resolveWithFullResponse: true,
         });
         
@@ -68,7 +68,7 @@ class OPNsenseApi {
             }),
             method: "post",
             simple: false,
-            ca: rootCa,
+            ca: config.CA,
             resolveWithFullResponse: true,
             followRedirect: false,
         });

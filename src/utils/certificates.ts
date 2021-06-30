@@ -1,3 +1,5 @@
-import fs from "fs";
+export default "dummy";
 
-export const rootCa = fs.readFileSync("certificates/root_ca.cer").toString();
+// import fs from "fs";
+
+// export const rootCa = fs.readFileSync("certificates/root_ca.cer").toString();

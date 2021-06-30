@@ -12,11 +12,11 @@ import ResponseCode from "./ResponseCode";
 import SpiceController from "./controllers/SpiceController";
 import ServiceUserController from "./controllers/ServiceUserController";
 import ServiceController from "./controllers/ServiceController";
+import config from "../config";
 
 export default class HttpApi {
 
     basePath: string = ""
-    port: number = 8100;
     app: Express
     httpsServer: https.Server;
 
@@ -24,8 +24,8 @@ export default class HttpApi {
         this.app = express();
 
         const credentials = {
-            key: fs.readFileSync("certificates/api.key"),
-            cert: fs.readFileSync("certificates/api.crt"),
+            key: config.api.KEY,
+            cert: config.api.CERT,
         }
         this.httpsServer = https.createServer(credentials, this.app);
     }
@@ -80,10 +80,10 @@ export default class HttpApi {
 
     public async listen() {
         await new Promise<void>(resolve => {
-            this.httpsServer.listen(this.port, resolve);
+            this.httpsServer.listen(config.api.PORT, resolve);
         });
 
-        console.log("API listening on Port " + this.port);
+        console.log("API listening on Port " + config.api.PORT);
     }
 
 }

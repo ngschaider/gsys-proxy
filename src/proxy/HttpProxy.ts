@@ -1,4 +1,5 @@
 import fs from "fs";
+import http from "http";
 import https from "https";
 import Service, { ServiceType } from "../models/Service";
 import { IncomingMessage, ServerResponse } from "http";
@@ -12,17 +13,19 @@ import formfill from "../utils/formfill";
 import GiteaProxy from "./proxies/GiteaProxy";
 import ServiceUser from "../models/ServiceUser";
 import OPNsenseProxy from "./proxies/OPNsenseProxy";
+import { sendFile, ServerPage } from "../utils/sendfile";
+import config from "../config";
 
 export default class HttpProxy {
 
-    port: number = 443;
     httpsServer: https.Server;
+    httpServer: http.Server;
     proxies: Proxy[] = [];
     
     constructor() {    
         const credentials = {
-            key: fs.readFileSync("certificates/proxy.key"),
-            cert: fs.readFileSync("certificates/proxy.crt"),
+            key: config.proxy.KEY,
+            cert: config.proxy.CERT,
         }
         
         this.httpsServer = https.createServer(credentials, async (req, res) => {
@@ -30,10 +33,13 @@ export default class HttpProxy {
             await this.proxyWeb(req, res);
 
             if(!req.handledByProxy) {
-                res.statusCode = 404;
-                res.write("<center><h1>404 - Not Found</h1></center>");
-                res.end();
+                sendFile(res, ServerPage.NotFound);
             }
+        });
+
+        this.httpServer = http.createServer(async (req, res) => {
+            res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+            res.end();
         });
 
         this.httpsServer.on("upgrade", async (req, socket, head) => {
@@ -122,10 +128,15 @@ export default class HttpProxy {
 
     async listen() {
         await new Promise<void>(resolve => {
-            this.httpsServer?.listen(this.port, resolve);
+            this.httpServer.listen(config.proxy.PORT, resolve);
+        });
+        console.log("Insecure Proxy listening on Port " + config.proxy.PORT);
+
+        await new Promise<void>(resolve => {
+            this.httpsServer.listen(config.proxy.PORT_SSL, resolve);
         }); 
 
-        console.log("Proxy listening on Port " + this.port);
+        console.log("Secure Proxy listening on Port " + config.proxy.PORT_SSL);
     }
 
 }

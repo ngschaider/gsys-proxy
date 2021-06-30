@@ -10,8 +10,8 @@ import BaseController from "./BaseController";
 import {validate as validateEmail} from "email-validator";
 import ResponseCode from "../ResponseCode";
 import { ServiceType } from "../../models/Service";
-import { rootCa } from "../../utils/certificates";
 import PveApi from "../../external_api/PveApi";
+import config from "../../config";
 
 @Controller("/spice")
 class SpiceController extends BaseController {
@@ -68,7 +68,7 @@ class SpiceController extends BaseController {
                 CSRFPreventionToken: serviceUser.data.csrf,
             },
             resolveWithFullResponse: true,
-            ca: rootCa,
+            ca: config.CA,
             simple: false,
             form: {
                 proxy: service.targetHost

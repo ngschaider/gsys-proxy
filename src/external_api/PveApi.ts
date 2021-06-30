@@ -1,5 +1,5 @@
 import request from "request-promise";
-import {rootCa} from "../utils/certificates";
+import config from "../config";
 
 export type TokenResponse = {
     csrf: string;
@@ -16,24 +16,24 @@ class PveApi {
                 }
             },
             resolveWithFullResponse: true,
-            ca: rootCa,
+            ca: config.CA,
             simple: false,
         });
 
         return res.statusCode !== 401;
     }
 
-    static async getNewTicket(host: string, username: string, password: string): Promise<TokenResponse|null> {
+    static async getNewTicket(host: string, username: string, password: string): Promise<TokenResponse> {
         const res = await request(host + "/api2/json/access/ticket", {
             method: "POST",
             body: "username=" + username + "&password=" + password,
             simple: false,
-            ca: rootCa,
+            ca: config.CA,
             resolveWithFullResponse: true,
         });
         
         if(res.statusCode === 401) {
-            return null;
+            return Promise.reject("Status Code " + res.statusCode);
         }
 
         const data = JSON.parse(res.body);
@@ -44,7 +44,7 @@ class PveApi {
                 csrf: data.data.CSRFPreventionToken,
             };
         } else {
-            return null;
+            return Promise.reject(data);
         }
     }
 

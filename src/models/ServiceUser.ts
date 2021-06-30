@@ -83,13 +83,10 @@ export default class ServiceUser extends BaseEntity {
                 const host = service.protocol + "://" + service.targetHost + ":" + service.targetPort;
                 console.log("Requesting new PVE Ticket...");
                 const tokenResp = await PveApi.getNewTicket(host, this.data.username + "@" + this.data.realm, this.data.password);
-                if(!tokenResp) {
-                    return;
-                }
                 this.data.tokenCreated = new Date().toString();
                 this.data.token = tokenResp.token;
                 this.data.csrf = tokenResp.csrf;
-                await this.save(); // this is async but we dont wait for saving
+                await this.save();
             }
         } else if(service.type === ServiceType.Gitea && this.data.type === ServiceType.Gitea) {
             const d = new Date();

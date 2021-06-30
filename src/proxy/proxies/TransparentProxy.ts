@@ -2,7 +2,7 @@ import { ClientRequest, IncomingMessage, ServerResponse } from "http";
 import { Duplex } from "stream";
 import Service from "../../models/Service";
 import httpProxy, { ServerOptions } from "http-proxy";
-import { rootCa } from "../../utils/certificates";
+import config from "../../config";
 
 
 class Proxy {
@@ -18,7 +18,7 @@ class Proxy {
                 host: service.targetHost,
                 port: service.targetPort,
                 protocol: service.protocol + ":",
-                ca: rootCa,
+                ca: config.CA,
             },
             changeOrigin: true,
             onProxyReq: this.onProxyReq,

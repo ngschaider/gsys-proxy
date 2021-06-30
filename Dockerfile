@@ -14,5 +14,6 @@ RUN npm install --only=production
 RUN npm install pm2 -g
 
 EXPOSE 8100
+EXPOSE 80
 EXPOSE 443
 CMD ["pm2-runtime", "index.js"]

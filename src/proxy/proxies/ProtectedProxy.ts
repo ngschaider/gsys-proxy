@@ -1,6 +1,7 @@
 import { IncomingMessage } from "http";
 import { ServerResponse } from "http";
 import { Socket } from "net";
+import config from "../../config";
 import Proxy from "./TransparentProxy";
 
 class ProtectedProxy extends Proxy {
@@ -17,7 +18,7 @@ class ProtectedProxy extends Proxy {
             const origin = "https://" + req.headers.host + (req.url as string); // a request created by http.Server always has an URL.
 
             res.statusCode = 302; // 302 - Found
-            res.setHeader("location", "https://accounts.gsys.at/login?origin=" + encodeURIComponent(origin));
+            res.setHeader("location", config.ACCOUNTS_URL + "login?origin=" + encodeURIComponent(origin));
             res.end();
         }
     }
