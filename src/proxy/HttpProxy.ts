@@ -40,7 +40,9 @@ export default class HttpProxy {
         });
 
         this.httpServer = http.createServer(async (req, res) => {
-            res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+            const redirectTo = "https://" + req.headers['host'] + req.url;
+            res.setHeader("location", redirectTo);
+            //res.writeHead(301, { "Location": redirectTo});
             res.end();
         });
 
