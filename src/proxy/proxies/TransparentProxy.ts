@@ -31,7 +31,7 @@ class Proxy {
     }
 
     async onProxyReq(proxyReq: ClientRequest, req: IncomingMessage, res: ServerResponse) {
-
+        
     }
 
     async onProxyReqWs(proxyReq: ClientRequest, req: IncomingMessage, socket: Duplex, options: ServerOptions, head: Buffer) {

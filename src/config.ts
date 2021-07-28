@@ -16,22 +16,22 @@ const apiCertFile = process.env.API_CERT_FILE ?? "/data/api.cer";
 const caFile = process.env.CA_FILE ?? "/data/ca.cer";
 
 const database: any = {
-    "type": (process.env.DB_TYPE as DatabaseType) ?? "mariadb",
-    "host": process.env.DB_HOST ?? "localhost",
-    "username": process.env.DB_USERNAME ?? "root",
-    "password": process.env.DB_PASSWORD ?? "root",
-    "port": process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
-    "database": process.env.DB_NAME ?? "gsys-proxy",
-    "synchronize": true,
-    "entities": [
+    type: (process.env.DB_TYPE as DatabaseType) ?? "mariadb",
+    host: process.env.DB_HOST ?? "localhost",
+    username: process.env.DB_USERNAME ?? "root",
+    password: process.env.DB_PASSWORD ?? "root",
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
+    database: process.env.DB_NAME ?? "gsys-proxy",
+    synchronize: true,
+    entities: [
         __dirname + "/models/**/*.{ts,js}",
     ],
-    "migrations": [
+    migrations: [
         __dirname + "/migrations/**/*.{ts,js}"
     ],
-    "cli": {
-        "entitiesDir": "./models",
-        "migrationsDir": "./migrations"
+    cli: {
+        entitiesDir: "./models",
+        migrationsDir: "./migrations"
     }
 };
 

@@ -29,6 +29,8 @@ export default class HttpProxy {
         }
         
         this.httpsServer = https.createServer(credentials, async (req, res) => {
+            console.log(req.method + " - " + req.url);
+
             await this.setUser(req);
             await this.proxyWeb(req, res);
 
@@ -107,6 +109,7 @@ export default class HttpProxy {
     async proxyWeb(req: IncomingMessage, res: ServerResponse) {
         for(const proxy of this.proxies) {
             if(proxy.relevant(req)) {
+                console.log(req.url + " -> " + proxy.service.targetHost + ":" + proxy.service.targetPort);
                 await this.setServiceUser(req, proxy.service);
                 proxy.web(req, res);
                 req.handledByProxy = true;
