@@ -1,4 +1,4 @@
-import LoginToken from "../../models/LoginToken";
+import LoginToken from "../../models/Session";
 import Service from "../../models/Service";
 import User from "../../models/User";
 import Service from "../../models/Service";

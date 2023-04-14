@@ -1,5 +1,5 @@
 import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import LoginToken from "./LoginToken";
+import Session from "./Session";
 import ServiceUser from "./ServiceUser";
 
 @Entity()
@@ -23,36 +23,15 @@ export default class User extends BaseEntity {
     @Column()
     email: string = "";
 
-    @OneToMany(type => LoginToken, loginToken => loginToken.user, {
+    @OneToMany(type => Session, session => session.user, {
         onDelete: "NO ACTION",
     })
-    loginTokens!: LoginToken[];
+    sessions!: Session[];
 
     @OneToMany(type => ServiceUser, serviceUser => serviceUser.user, {
         eager: true,
         onDelete: "NO ACTION",
     })
     serviceUsers!: ServiceUser[];
-
-    @Column()
-    changePasswordOnLogin!: boolean;
-
-    @Column()
-    isAdmin!: boolean;
-
-    withoutHiddenFields() {
-        return {
-            id: this.id,
-            username: this.username,
-            firstName: this.firstName,
-            lastName: this.lastName,
-            email: this.email,
-            isAdmin: this.isAdmin,
-            resetPasswordOnLogin: this.changePasswordOnLogin,
-        }
-    }
-
-    @Column({type: "text", default: null})
-    dashboardData!: string;
 
 }

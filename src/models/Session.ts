@@ -1,6 +1,6 @@
 import { BaseEntity, Column, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, RelationCount } from "typeorm";
 import User from "./User";
-import {getRandomString} from "../utils/string";
+import { getRandomString } from "../utils/string";
 
 @Entity()
 export default class LoginToken extends BaseEntity {
@@ -8,7 +8,7 @@ export default class LoginToken extends BaseEntity {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
-    @ManyToOne(type => User, user => user.loginTokens, {
+    @ManyToOne(type => User, user => user.sessions, {
         onDelete: "CASCADE",
         eager: true,
     })
